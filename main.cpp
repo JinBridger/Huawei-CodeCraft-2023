@@ -1,5 +1,6 @@
 #include "io.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 
@@ -28,6 +29,7 @@ void test_robot() {
 }
 
 int main() {
+    // freopen("C:/Users/26354/Documents/HuaweiCodeCraft/WindowsRelease/maps/1.txt", "r", stdin);
     array<msc::robot, ROBOT_N> robots;
     msc::io                    io(robots);
 
@@ -41,7 +43,14 @@ int main() {
     robots[1].destroy();
     robots[2].destroy();
     robots[3].forward(123.456);
-    io.send();
+
+    auto start = std::chrono::system_clock::now();
+    // put what you want to test time here
+    // io.send();
+    auto end      = std::chrono::system_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "It takes " << duration.count() << " us";
+
     // readUntilOK();
     // puts("OK");
     // fflush(stdout);

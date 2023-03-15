@@ -31,14 +31,19 @@ namespace msc {
                     }
                 }
             }
+
+            std::cerr << "[LOG] Successfully loaded map, " << _workbenches.size() << " workbenches" << std::endl;
         }
 
         void send() {
             // Combine outputs
-            std::ostringstream os;
-            os << _frame_id << "\n";
-            std::copy(_robots.begin(), _robots.end(), std::ostream_iterator<std::string>(os, "\n"));
-            std::cout << os.str() << "\nOK" << std::endl;
+            std::string instructions = "";
+            for (int i = 0; i < ROBOT_N; ++i) {
+                instructions += _robots[i].get_state();
+            }
+            // Add the start and end of output
+            instructions = std::to_string(_frame_id) + "\n" + instructions + "OK";
+            std::cout << instructions << std::endl;
             std::cerr << "[LOG] Successfully output frame " << _frame_id << std::endl;
         }
 
