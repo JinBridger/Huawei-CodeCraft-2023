@@ -1,5 +1,6 @@
 #include "io.hpp"
 
+#include <cstdio>
 #include <iostream>
 
 using namespace std;
@@ -19,33 +20,43 @@ bool readUntilOK() {
 
 void test_robot() {
     msc::robot r;
-    r.update(0, 1, 2, 0.1, 0.2, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6);
     r.forward(1);
     r.rotate(2);
     r.buy();
     r.sell();
     r.destroy();
-    std::cout << r.get_state();
 }
 
 int main() {
     array<msc::robot, ROBOT_N> robots;
     msc::io                    io(robots);
-    readUntilOK();
-    puts("OK");
-    fflush(stdout);
-    int frameID;
-    while (scanf("%d", &frameID) != EOF) {
-        readUntilOK();
-        printf("%d\n", frameID);
-        int    lineSpeed  = 6;
-        double angleSpeed = 1.5;
-        for (int robotId = 0; robotId < 4; robotId++) {
-            printf("forward %d %d\n", robotId, lineSpeed);
-            printf("rotate %d %f\n", robotId, angleSpeed);
-        }
-        printf("OK\n", frameID);
-        fflush(stdout);
-    }
+
+    robots[0].id = 0;
+    robots[1].id = 1;
+    robots[2].id = 2;
+    robots[3].id = 3;
+
+    robots[0].rotate(456.789);
+    robots[1].buy();
+    robots[1].destroy();
+    robots[2].destroy();
+    robots[3].forward(123.456);
+    io.send();
+    // readUntilOK();
+    // puts("OK");
+    // fflush(stdout);
+    // int frameID;
+    // while (scanf("%d", &frameID) != EOF) {
+    //     readUntilOK();
+    //     printf("%d\n", frameID);
+    //     int    lineSpeed  = 6;
+    //     double angleSpeed = 1.5;
+    //     for (int robotId = 0; robotId < 4; robotId++) {
+    //         printf("forward %d %d\n", robotId, lineSpeed);
+    //         printf("rotate %d %f\n", robotId, angleSpeed);
+    //     }
+    //     printf("OK\n", frameID);
+    //     fflush(stdout);
+    // }
     return 0;
 }
