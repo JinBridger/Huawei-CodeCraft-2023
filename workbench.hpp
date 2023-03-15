@@ -4,6 +4,9 @@
 
 namespace msc {
     struct workbench {
+        workbench(double x, double y, int type)
+            : x(x), y(y), type(type), left_time(0), material_state(), product_state(), id(0) {}
+
         int id;
         int type;
 

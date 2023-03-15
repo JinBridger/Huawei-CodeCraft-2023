@@ -4,8 +4,12 @@
 #include "robot.hpp"
 #include "workbench.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <iostream>
+#include <iterator>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -13,19 +17,28 @@ namespace msc {
     class io {
     public:
         io(std::array<robot, ROBOT_N>& robots) : _robots(robots) {
-            // Load map (TODO)
-            _workbenches.resize(10);
+            // Load map
+            int robot_index = 0;
+            for (int x = 0; x < MAP_SIZE; ++x) {
+                std::string cur_line;
+                std::getline(std::cin, cur_line);
+                for (int y = 0; y < cur_line.size(); ++y) {
+                    if (std::isdigit(cur_line[y]))
+                        _workbenches.emplace_back(x / 2.0, y / 2.0, cur_line[y] - '0');
+                    else if (cur_line[y] == 'A') {
+                        _robots[robot_index].x = x / 2.0;
+                        _robots[robot_index].y = y / 2.0;
+                    }
+                }
+            }
         }
 
         void send() {
             // Combine outputs
-            std::string instructions = "";
-            for (int i = 0; i < ROBOT_N; ++i) {
-                instructions += _robots[i].state;
-            }
-            // Add the start and end of output
-            instructions = std::to_string(_frame_id) + "\n" + instructions + "OK";
-            std::cout << instructions << std::endl;
+            std::ostringstream os;
+            os << _frame_id << "\n";
+            std::copy(_robots.begin(), _robots.end(), std::ostream_iterator<std::string>(os, "\n"));
+            std::cout << os.str() << "\nOK" << std::endl;
             std::cerr << "[LOG] Successfully output frame " << _frame_id << std::endl;
         }
 
@@ -47,21 +60,20 @@ namespace msc {
 
             // Input robots
             for (int i = 0; i < ROBOT_N; ++i) {
-                std::cin >> _robots[i].workbench_type;
-                std::cin >> _robots[i].object_type;
+                std::cin >> _robots[i].workbench;
+                std::cin >> _robots[i].item;
 
                 std::cin >> _robots[i].time_coef;
                 std::cin >> _robots[i].coll_coef;
 
                 std::cin >> _robots[i].angle_v;
-                std::cin >> _robots[i].linear_vx;
-                std::cin >> _robots[i].linear_vy;
+                double vx, vy;
+                std::cin >> vx >> vy;
+                _robots[i].linear_v = sqrt(vx * vx + vy * vy);
 
                 std::cin >> _robots[i].direction;
                 std::cin >> _robots[i].x;
                 std::cin >> _robots[i].y;
-
-                _robots[i].state = "";  // Reset the robot state
             }
 
             // Check if ended correctly
