@@ -1,4 +1,7 @@
+#include "io.hpp"
+
 #include <iostream>
+
 using namespace std;
 
 void algo();
@@ -15,6 +18,8 @@ bool readUntilOK() {
 }
 
 int main() {
+    array<msc::robot, ROBOT_N> robots;
+    msc::io                    io(robots);
     readUntilOK();
     puts("OK");
     fflush(stdout);
