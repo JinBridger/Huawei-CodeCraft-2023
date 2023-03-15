@@ -1,13 +1,15 @@
 #include <iostream>
 using namespace std;
 
+void algo();
+
 bool readUntilOK() {
     char line[1024];
     while (fgets(line, sizeof line, stdin)) {
         if (line[0] == 'O' && line[1] == 'K') {
             return true;
         }
-        //do something
+        // do something
     }
     return false;
 }
@@ -20,9 +22,9 @@ int main() {
     while (scanf("%d", &frameID) != EOF) {
         readUntilOK();
         printf("%d\n", frameID);
-        int lineSpeed = 3;
+        int    lineSpeed  = 6;
         double angleSpeed = 1.5;
-        for(int robotId = 0; robotId < 4; robotId++){
+        for (int robotId = 0; robotId < 4; robotId++) {
             printf("forward %d %d\n", robotId, lineSpeed);
             printf("rotate %d %f\n", robotId, angleSpeed);
         }
