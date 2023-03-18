@@ -9,7 +9,6 @@
 #include <cctype>
 #include <iostream>
 #include <iterator>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -31,6 +30,18 @@ namespace msc {
                     }
                 }
             }
+
+            // Maybe we will do some pretask here
+            // PRETASK();
+            // Then output OK!
+
+            // Check if ended correctly
+            std::string end_of_input;
+            std::cin >> end_of_input;
+            if (end_of_input != "OK") {
+                std::cerr << "[LOG] ERROR: Map input ended unexpectedly: " + end_of_input << std::endl;
+            }
+            std::cout << "OK" << std::endl;
 
             std::cerr << "[LOG] Successfully loaded map, " << _workbenches.size() << " workbenches" << std::endl;
         }

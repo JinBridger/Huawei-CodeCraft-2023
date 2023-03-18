@@ -6,7 +6,6 @@
 #include <string>
 #include <utility>
 
-
 namespace msc {
     struct robot {
         double area() const {
@@ -58,7 +57,7 @@ namespace msc {
         double time_coef;  // time coefficient
         double coll_coef;  // collision coefficient
 
-        double angle_v;    // angular velocity
+        double angle_v;   // angular velocity
         double linear_v;  // linear velocity
 
         double direction;
