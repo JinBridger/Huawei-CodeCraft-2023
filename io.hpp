@@ -102,6 +102,10 @@ namespace msc {
             std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
         }
 
+        workbench& get_workbench(int workbench_num) {
+            return _workbenches[workbench_num];
+        }
+
     private:
         int _frame_id = 0;
         int _coin_cnt = 0;

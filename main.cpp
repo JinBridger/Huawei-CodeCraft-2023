@@ -1,3 +1,4 @@
+#include "algo.hpp"
 #include "io.hpp"
 
 #include <chrono>
@@ -85,9 +86,14 @@ int main() {
     robots[2].id = 2;
     robots[3].id = 3;
 
+    msc::robot_controller debug_controller(io, robots[0]);
+
     while (1) {
         io.receive();
-        simple_goto(robots[0], 2, 49.25);
+        if (debug_controller.isIdle())
+            debug_controller.start_task(0, 1);
+        else
+            debug_controller.continue_task();
         io.send();
     }
 
