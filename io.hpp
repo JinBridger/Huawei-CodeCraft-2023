@@ -55,7 +55,7 @@ namespace msc {
             // Add the start and end of output
             instructions = std::to_string(_frame_id) + "\n" + instructions + "OK";
             std::cout << instructions << std::endl;
-            std::cerr << "[LOG] Successfully output frame " << _frame_id << std::endl;
+            // std::cerr << "[LOG] Successfully output frame " << _frame_id << std::endl;
         }
 
         void receive() {
@@ -99,7 +99,7 @@ namespace msc {
                 std::cerr << "[LOG] ERROR: Input ended unexpectedly: " + end_of_input << std::endl;
             }
 
-            std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
+            // std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
         }
 
         workbench& get_workbench(int workbench_num) {

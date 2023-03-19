@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <stdlib.h>
 
@@ -56,15 +57,8 @@ void simple_goto(msc::robot& bot, double x, double y) {
     // RUNNING
 }
 
-bool readUntilOK() {
-    char line[1024];
-    while (fgets(line, sizeof line, stdin)) {
-        if (line[0] == 'O' && line[1] == 'K') {
-            return true;
-        }
-        // do something
-    }
-    return false;
+int get_rand() {
+    return rand() % 20 + 1;
 }
 
 // void test_robot() {
@@ -86,39 +80,28 @@ int main() {
     robots[2].id = 2;
     robots[3].id = 3;
 
-    msc::robot_controller debug_controller(io, robots[0]);
+    msc::robot_controller** debug_controllers = new msc::robot_controller*[4];
+
+    msc::robot_controller debug_controller_0(io, robots[0]);
+    msc::robot_controller debug_controller_1(io, robots[1]);
+    msc::robot_controller debug_controller_2(io, robots[2]);
+    msc::robot_controller debug_controller_3(io, robots[3]);
+
+    debug_controllers[0] = &debug_controller_0;
+    debug_controllers[1] = &debug_controller_1;
+    debug_controllers[2] = &debug_controller_2;
+    debug_controllers[3] = &debug_controller_3;
 
     while (1) {
         io.receive();
-        if (debug_controller.isIdle())
-            debug_controller.start_task(0, 1);
+        // for (int i = 0; i < 4; ++i) {
+        if (debug_controllers[0]->is_idle())
+            debug_controllers[0]->start_task(0, get_rand());
         else
-            debug_controller.continue_task();
+            debug_controllers[0]->continue_task();
+        // }
         io.send();
     }
 
-    // auto start = std::chrono::system_clock::now();
-    // // put what you want to test time here
-    // // io.send();
-    // auto end      = std::chrono::system_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "It takes " << duration.count() << " us";
-
-    // readUntilOK();
-    // puts("OK");
-    // fflush(stdout);
-    // int frameID;
-    // while (scanf("%d", &frameID) != EOF) {
-    //     readUntilOK();
-    //     printf("%d\n", frameID);
-    //     int    lineSpeed  = 6;
-    //     double angleSpeed = 1.5;
-    //     for (int robotId = 0; robotId < 4; robotId++) {
-    //         printf("forward %d %d\n", robotId, lineSpeed);
-    //         printf("rotate %d %f\n", robotId, angleSpeed);
-    //     }
-    //     printf("OK\n", frameID);
-    //     fflush(stdout);
-    // }
     return 0;
 }
