@@ -1,3 +1,5 @@
+#pragma once
+
 #include "io.hpp"
 #include "robot.hpp"
 #include "workbench.hpp"
@@ -6,6 +8,10 @@
 #include <cmath>
 
 namespace msc {
+
+    /**
+     * TODO: Merge controller into robot
+     */
     class robot_controller {
     public:
         robot_controller(io& i, robot& r) : _io(i), _robot(r), _target_workbench(nullptr), _task_status(Idle) {}
@@ -81,9 +87,6 @@ namespace msc {
                 // Set Speed
                 _robot.forward(get_speed_threshold(delta_dis, abs(delta_angle)));
             }
-
-            // std::cerr << "[LOG] SPD LIMIT: " << get_speed_threshold(abs(delta_angle))
-            //   << "\t ANG LIMIT: " << get_angle_threshold(delta_dis) << std::endl;
         }
 
     private:
@@ -113,5 +116,10 @@ namespace msc {
 
         TaskStatus _task_status;
         TaskType   _task_type;
+    };
+
+    class scheduler {
+    public:
+    private:
     };
 }  // namespace msc

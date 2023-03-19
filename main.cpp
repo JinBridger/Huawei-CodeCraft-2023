@@ -12,50 +12,50 @@ using namespace std;
 
 void algo();
 
-int FINISHED = 0;
+// int FINISHED = 0;
 
-void simple_goto(msc::robot& bot, double x, double y) {
-    if (bot.angle_v == 0 && bot.linear_v == 0 && !FINISHED) {  // STOP
-        double target_angle = atan((y - bot.y) / (x - bot.x));
-        if (y - bot.y > 0 && x - bot.x < 0) {
-            target_angle += PI;
-        }
-        if (y - bot.y < 0 && x - bot.x < 0) {
-            target_angle -= PI;
-        }
-        double delta_angle = target_angle - bot.direction;
-        if (delta_angle > 0) {
-            bot.rotate(1);
-        }
-        else {
-            bot.rotate(-1);
-        }
-        return;
-    }
-    if (bot.linear_v == 0 && !FINISHED) {  // ROTATING
-        double target_angle = atan((y - bot.y) / (x - bot.x));
-        if (y - bot.y > 0 && x - bot.x < 0) {
-            target_angle += PI;
-        }
-        if (y - bot.y < 0 && x - bot.x < 0) {
-            target_angle -= PI;
-        }
-        double delta_angle = target_angle - bot.direction;
-        if (abs(delta_angle) < 0.05) {
-            bot.rotate(0);
-            FINISHED = 1;
-        }
-        return;
-    }
-    if (bot.angle_v == 0 && FINISHED) {
-        bot.forward(5);
-    }
-    if (sqrt((bot.x - x) * (bot.x - x) + (bot.y - y) * (bot.y - y)) < 0.4) {
-        std::cerr << "SUCCESS!";
-        exit(1);
-    }
-    // RUNNING
-}
+// void simple_goto(msc::robot& bot, double x, double y) {
+//     if (bot.angle_v == 0 && bot.linear_v == 0 && !FINISHED) {  // STOP
+//         double target_angle = atan((y - bot.y) / (x - bot.x));
+//         if (y - bot.y > 0 && x - bot.x < 0) {
+//             target_angle += PI;
+//         }
+//         if (y - bot.y < 0 && x - bot.x < 0) {
+//             target_angle -= PI;
+//         }
+//         double delta_angle = target_angle - bot.direction;
+//         if (delta_angle > 0) {
+//             bot.rotate(1);
+//         }
+//         else {
+//             bot.rotate(-1);
+//         }
+//         return;
+//     }
+//     if (bot.linear_v == 0 && !FINISHED) {  // ROTATING
+//         double target_angle = atan((y - bot.y) / (x - bot.x));
+//         if (y - bot.y > 0 && x - bot.x < 0) {
+//             target_angle += PI;
+//         }
+//         if (y - bot.y < 0 && x - bot.x < 0) {
+//             target_angle -= PI;
+//         }
+//         double delta_angle = target_angle - bot.direction;
+//         if (abs(delta_angle) < 0.05) {
+//             bot.rotate(0);
+//             FINISHED = 1;
+//         }
+//         return;
+//     }
+//     if (bot.angle_v == 0 && FINISHED) {
+//         bot.forward(5);
+//     }
+//     if (sqrt((bot.x - x) * (bot.x - x) + (bot.y - y) * (bot.y - y)) < 0.4) {
+//         std::cerr << "SUCCESS!";
+//         exit(1);
+//     }
+//     // RUNNING
+// }
 
 int get_rand() {
     return rand() % 20 + 1;
@@ -94,12 +94,12 @@ int main() {
 
     while (1) {
         io.receive();
-        // for (int i = 0; i < 4; ++i) {
-        if (debug_controllers[0]->is_idle())
-            debug_controllers[0]->start_task(0, get_rand());
-        else
-            debug_controllers[0]->continue_task();
-        // }
+        for (int i = 0; i < ROBOT_N; ++i) {
+            if (debug_controllers[i]->is_idle())
+                debug_controllers[i]->start_task(0, get_rand());
+            else
+                debug_controllers[i]->continue_task();
+        }
         io.send();
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bench_god.hpp"
 #include "core.hpp"
 #include "robot.hpp"
 #include "workbench.hpp"
@@ -23,10 +24,10 @@ namespace msc {
                 std::getline(std::cin, cur_line);
                 for (int y = 0; y < cur_line.size(); ++y) {
                     if (std::isdigit(cur_line[y]))
-                        _workbenches.emplace_back(x / 2.0, y / 2.0, cur_line[y] - '0');
+                        _bench_god.add_bench(x / 2.0, 50 - y / 2.0, cur_line[y] - '0');
                     else if (cur_line[y] == 'A') {
                         _robots[robot_index].x = x / 2.0;
-                        _robots[robot_index].y = y / 2.0;
+                        _robots[robot_index].y = 50 - y / 2.0;
                     }
                 }
             }
@@ -43,7 +44,7 @@ namespace msc {
             }
             std::cout << "OK" << std::endl;
 
-            std::cerr << "[LOG] Successfully loaded map, " << _workbenches.size() << " workbenches" << std::endl;
+            std::cerr << "[LOG] Successfully loaded map, " << _bench_god.size() << " workbenches" << std::endl;
         }
 
         void send() {
@@ -65,14 +66,7 @@ namespace msc {
             std::cin >> workbench_cnt;
 
             // Input workbench
-            for (int i = 0; i < workbench_cnt; ++i) {
-                std::cin >> _workbenches[i].type;
-                std::cin >> _workbenches[i].x;
-                std::cin >> _workbenches[i].y;
-                std::cin >> _workbenches[i].left_time;
-                std::cin >> _workbenches[i].material_state;
-                std::cin >> _workbenches[i].product_state;
-            }
+            _bench_god.update();
 
             // Input robots
             for (int i = 0; i < ROBOT_N; ++i) {
@@ -102,8 +96,9 @@ namespace msc {
             // std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
         }
 
+        // TO REMOVE
         workbench& get_workbench(int workbench_num) {
-            return _workbenches[workbench_num];
+            return _bench_god.get_workbench(workbench_num);
         }
 
     private:
@@ -111,6 +106,6 @@ namespace msc {
         int _coin_cnt = 0;
 
         std::array<robot, ROBOT_N>& _robots;
-        std::vector<workbench>      _workbenches;
+        bench_god                   _bench_god;
     };
 }  // namespace msc
