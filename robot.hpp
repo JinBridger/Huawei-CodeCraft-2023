@@ -10,10 +10,38 @@
 namespace msc {
     class robot {
     public:
-        robot(bench_god& b, int id) : _bench_god(b), _task_status(Idle), _id(id) {}
+        robot(bench_god& b, int id) : _bench_god(b), _task_status(Idle), _action_type(Waiting), _id(id) {}
 
         bool is_idle() const {
             return (_task_status == Idle) ? true : false;
+        }
+
+        bool is_waiting() const {
+            return (_action_type == Waiting) ? true : false;
+        }
+
+        void begin_action(double buy_x, double buy_y, double sell_x, double sell_y) {
+            _buy_x  = buy_x;
+            _buy_y  = buy_y;
+            _sell_x = sell_x;
+            _sell_y = sell_y;
+
+            std::cerr << "[LOG] Robot " << _id << " Buy: [" << buy_x << ", " << buy_y << "]\tSell: [" << sell_x << ", "
+                      << sell_y << "]" << std::endl;
+            _action_type = Buying;
+            start_task(0, buy_x, buy_y);
+        }
+
+        void continue_action() {
+            if (_task_status == Busy)
+                continue_task();
+            if (_task_status == Idle && _action_type == Buying) {
+                _action_type = Selling;
+                start_task(1, _sell_x, _sell_y);
+            }
+            if (_task_status == Idle && _action_type == Selling) {
+                _action_type = Waiting;
+            }
         }
 
         void start_task(bool is_sell, double target_x, double target_y) {
@@ -26,8 +54,8 @@ namespace msc {
             _task_status = Busy;
             _task_type   = is_sell ? Sell : Buy;
 
-            std::cerr << "[LOG] Robot " << _id << " now going to [" << _target_x << ", " << _target_y << "]"
-                      << std::endl;
+            // std::cerr << "[LOG] Robot " << _id << " now going to [" << _target_x << ", " << _target_y << "]"
+            //   << std::endl;
 
             continue_task();
         }
@@ -41,7 +69,7 @@ namespace msc {
             double dx           = _target_x - _x;
             double target_angle = atan(dy / dx);
             if (dx < 0) {
-                if (dy > 0)
+                if (dy >= 0)
                     target_angle += PI;
                 if (dy < 0)
                     target_angle -= PI;
@@ -118,6 +146,11 @@ namespace msc {
         }
 
     private:
+        double _buy_x;
+        double _buy_y;
+        double _sell_x;
+        double _sell_y;
+
         double get_angle_threshold(double dt_dis, double dt_angle) {
             if (dt_dis > 20)
                 return 0.08;
@@ -137,6 +170,7 @@ namespace msc {
 
         enum TaskStatus { Idle, Busy };
         enum TaskType { Buy, Sell };
+        enum ActionType { Waiting, Buying, Selling };
 
         bench_god& _bench_god;
         double     _target_x;
@@ -144,6 +178,7 @@ namespace msc {
 
         TaskStatus _task_status;
         TaskType   _task_type;
+        ActionType _action_type;
 
         // Low level API
         double area() const {
@@ -167,11 +202,11 @@ namespace msc {
         }
 
         bool buy() {
-            _state += "buy " + std::to_string(_id) + "\n";
+            // _state += "buy " + std::to_string(_id) + "\n";
             return true;
         }
         bool sell() {
-            _state += "sell " + std::to_string(_id) + "\n";
+            // _state += "sell " + std::to_string(_id) + "\n";
             return true;
         }
         bool destroy() {
