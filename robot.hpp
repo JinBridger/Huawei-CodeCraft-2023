@@ -10,22 +10,23 @@
 namespace msc {
     class robot {
     public:
-        robot(bench_god& b, int id) : _bench_god(b), _target_workbench(nullptr), _task_status(Idle), _id(id) {}
+        robot(bench_god& b, int id) : _bench_god(b), _task_status(Idle), _id(id) {}
 
         bool is_idle() const {
-            return _task_status == Idle ? true : false;
+            return (_task_status == Idle) ? true : false;
         }
 
-        void start_task(bool is_sell, int target_workbench_num) {
+        void start_task(bool is_sell, double target_x, double target_y) {
             // Called by scheduler when robot is idle
             // Start a new task
 
             // Set task
-            _target_workbench = &_bench_god.get_workbench(target_workbench_num);
-            _task_status      = Busy;
-            _task_type        = is_sell ? Sell : Buy;
+            _target_x    = target_x;
+            _target_y    = target_y;
+            _task_status = Busy;
+            _task_type   = is_sell ? Sell : Buy;
 
-            std::cerr << "[LOG] Now going to [" << _target_workbench->x << ", " << _target_workbench->y << "]"
+            std::cerr << "[LOG] Robot " << _id << " now going to [" << _target_x << ", " << _target_y << "]"
                       << std::endl;
 
             continue_task();
@@ -36,8 +37,8 @@ namespace msc {
             // Continue the unfinished task
 
             // Calculate the target angle of workbench
-            double dy           = _target_workbench->y - _y;
-            double dx           = _target_workbench->x - _x;
+            double dy           = _target_y - _y;
+            double dx           = _target_x - _x;
             double target_angle = atan(dy / dx);
             if (dx < 0) {
                 if (dy > 0)
@@ -66,6 +67,11 @@ namespace msc {
                 }
                 forward(0);
                 rotate(0);
+                // std::cerr << "[LOG] ROBOT X: " << _x << "\tY: " << _y << std::endl;
+                // std::cerr << "[LOG] TARGT X: " << _target_x << "\tY: " << _target_y << std::endl;
+                // std::cerr << "[LOG] Robot " << _id << " dis is " << delta_dis << std::endl;
+                // std::cerr << "[LOG] Robot " << _id << " set to idle" << std::endl;
+
                 _task_status = Idle;
             }
             if (_task_status == Busy) {
@@ -112,8 +118,6 @@ namespace msc {
         }
 
     private:
-        // Low level APIs
-
         double get_angle_threshold(double dt_dis, double dt_angle) {
             if (dt_dis > 20)
                 return 0.08;
@@ -135,12 +139,12 @@ namespace msc {
         enum TaskType { Buy, Sell };
 
         bench_god& _bench_god;
-        workbench* _target_workbench;
+        double     _target_x;
+        double     _target_y;
 
         TaskStatus _task_status;
         TaskType   _task_type;
 
-        // private:
         // Low level API
         double area() const {
             return PI * pow(_item ? ROBOT_RADIUS_ON_TAKING : ROBOT_RADIUS, 2);

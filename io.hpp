@@ -83,11 +83,6 @@ namespace msc {
             // std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
         }
 
-        // TO REMOVE
-        workbench& get_workbench(int workbench_num) {
-            return _bench_god.get_workbench(workbench_num);
-        }
-
     private:
         int _frame_id = 0;
         int _coin_cnt = 0;
