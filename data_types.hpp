@@ -209,7 +209,7 @@ namespace msc {
             }
             if (is_busy()) {
                 // Correction the direction
-                if (abs(delta_angle) > get_angle_threshold(delta_dis, abs(delta_angle))) {
+                if (fabs(delta_angle) > get_angle_threshold(delta_dis, fabs(delta_angle))) {
                     if (delta_angle > 0)
                         rotate(PI);
                     else
@@ -220,7 +220,7 @@ namespace msc {
                 }
 
                 // Set Speed
-                forward(get_speed_threshold(delta_dis, abs(delta_angle)));
+                forward(get_speed_threshold(delta_dis, fabs(delta_angle)));
             }
         }
 
