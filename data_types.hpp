@@ -1,13 +1,59 @@
 #pragma once
 
-#include "bench_god.hpp"
 #include "core.hpp"
 
-#include <cmath>
+#include <bitset>
+#include <iostream>
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace msc {
+    struct workbench {
+        workbench(double x, double y, int type)
+            : x(x), y(y), type(type), left_time(0), material_state(), product_state(), id(0) {}
+
+        int id;
+        int type;
+
+        double x;
+        double y;
+
+        int            left_time;  // in unit frame
+        std::bitset<6> material_state;
+        bool           product_state;
+    };
+
+    class bench_god {
+    public:
+        template <class... Ts>
+        void add_bench(Ts&&... args) {
+            _workbenches.emplace_back(std::forward<Ts>(args)...);
+        }
+
+        size_t size() noexcept {
+            return _workbenches.size();
+        }
+
+        void update() {
+            for (auto& ben : _workbenches) {
+                std::cin >> ben.type;
+                std::cin >> ben.x;
+                std::cin >> ben.y;
+                std::cin >> ben.left_time;
+                std::cin >> ben.material_state;
+                std::cin >> ben.product_state;
+            }
+        }
+
+        // TO REMOVE
+        workbench& get_workbench(int workbench_num) {
+            return _workbenches[workbench_num];
+        }
+
+    private:
+        std::vector<workbench> _workbenches;
+    };
+
     class robot {
     public:
         robot(bench_god& b, int id) : _bench_god(b), _action_status(Idle), _task_status(Waiting), _id(id) {}

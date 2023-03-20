@@ -1,8 +1,7 @@
 #pragma once
 
+#include "data_types.hpp"
 #include "io.hpp"
-#include "robot.hpp"
-#include "workbench.hpp"
 
 #include <algorithm>
 #include <cmath>

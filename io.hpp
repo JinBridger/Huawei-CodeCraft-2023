@@ -1,9 +1,7 @@
 #pragma once
 
-#include "bench_god.hpp"
 #include "core.hpp"
-#include "robot.hpp"
-#include "workbench.hpp"
+#include "data_types.hpp"
 
 #include <algorithm>
 #include <cctype>
