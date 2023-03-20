@@ -6,17 +6,17 @@
 #include "workbench.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <iostream>
 #include <iterator>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
 namespace msc {
     class io {
     public:
-        io(std::array<robot, ROBOT_N>& robots) : _robots(robots) {
+        io(std::vector<robot>& robots, bench_god& benchgod) : _robots(robots), _bench_god(benchgod) {
             // Load map
             int robot_index = 0;
             for (int x = 0; x < MAP_SIZE; ++x) {
@@ -26,8 +26,7 @@ namespace msc {
                     if (std::isdigit(cur_line[y]))
                         _bench_god.add_bench(x / 2.0, 50 - y / 2.0, cur_line[y] - '0');
                     else if (cur_line[y] == 'A') {
-                        _robots[robot_index].x = x / 2.0;
-                        _robots[robot_index].y = 50 - y / 2.0;
+                        _robots[robot_index++].update_x_and_y(x / 2.0, 50 - y / 2.0);
                     }
                 }
             }
@@ -70,20 +69,7 @@ namespace msc {
 
             // Input robots
             for (int i = 0; i < ROBOT_N; ++i) {
-                std::cin >> _robots[i].workbench;
-                std::cin >> _robots[i].item;
-
-                std::cin >> _robots[i].time_coef;
-                std::cin >> _robots[i].coll_coef;
-
-                std::cin >> _robots[i].angle_v;
-                double vx, vy;
-                std::cin >> vx >> vy;
-                _robots[i].linear_v = sqrt(vx * vx + vy * vy);
-
-                std::cin >> _robots[i].direction;
-                std::cin >> _robots[i].x;
-                std::cin >> _robots[i].y;
+                _robots[i].update();
             }
 
             // Check if ended correctly
@@ -91,6 +77,7 @@ namespace msc {
             std::cin >> end_of_input;
             if (end_of_input != "OK") {
                 std::cerr << "[LOG] ERROR: Input ended unexpectedly: " + end_of_input << std::endl;
+                exit(1);
             }
 
             // std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
@@ -105,7 +92,7 @@ namespace msc {
         int _frame_id = 0;
         int _coin_cnt = 0;
 
-        std::array<robot, ROBOT_N>& _robots;
-        bench_god                   _bench_god;
+        std::vector<robot>& _robots;
+        bench_god&          _bench_god;
     };
 }  // namespace msc
