@@ -51,5 +51,25 @@ namespace msc {
         return -1;
     }
 
-    
+    constexpr bool is_productible(int type) {
+        return 1 <= type && type <= 7;
+    }
+
+    constexpr bool can_purchase(int type, int material) {
+        switch (type) {
+        case 4:
+            return material == 1 && material == 2;
+        case 5:
+            return material == 1 && material == 3;
+        case 6:
+            return material == 2 && material == 3;
+        case 7:
+            return material == 4 && material == 5 && material == 6;
+        case 8:
+            return material == 7;
+        case 9:
+            return is_productible(type);
+        }
+        return false;
+    }
 }  // namespace msc

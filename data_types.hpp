@@ -2,12 +2,14 @@
 
 #include "core.hpp"
 
+#include <algorithm>
 #include <bitset>
 #include <cmath>
 #include <iostream>
 #include <istream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace msc {
@@ -48,9 +50,8 @@ namespace msc {
 
     struct workbench {
         workbench(const point& p, int type)
-            : p(p), type(type), left_time(0), material_state(), product_state(), id(0) {}
+            : p(p), type(type), left_time(0), material_state(), product_state(){}
 
-        int id;
         int type;
 
         point p;
@@ -62,9 +63,25 @@ namespace msc {
 
     class bench_god {
     public:
+        bench_god() {
+            _workbenches.reserve(50);
+        }
         template <class... Ts>
         void add_bench(Ts&&... args) {
             _workbenches.emplace_back(std::forward<Ts>(args)...);
+        }
+
+        void analyze() {
+            for (auto& h : _workbenches) {
+                if (is_productible(h._bench.type)) {
+                    for (auto& other : _workbenches) {
+                        if (can_purchase(other._bench.type, h._bench.type))
+                            h._tasks.emplace_back(std::addressof(other._bench), 0 /* calculate weight here*/);
+                    }
+                    std::sort(h._tasks.begin(), h._tasks.end(),
+                              [](const edge& l, const edge& r) { return l._weight < r._weight; });
+                }
+            }
         }
 
         size_t size() noexcept {
@@ -72,22 +89,37 @@ namespace msc {
         }
 
         void update() {
-            for (auto& ben : _workbenches) {
-                std::cin >> ben.type;
-                std::cin >> ben.p;
-                std::cin >> ben.left_time;
-                std::cin >> ben.material_state;
-                std::cin >> ben.product_state;
+            for (auto& h : _workbenches) {
+                std::cin >> h._bench.type;
+                std::cin >> h._bench.p;
+                std::cin >> h._bench.left_time;
+                std::cin >> h._bench.material_state;
+                std::cin >> h._bench.product_state;
             }
         }
 
         // TO REMOVE
         workbench& get_workbench(int workbench_num) {
-            return _workbenches[workbench_num];
+            return _workbenches[workbench_num]._bench;
         }
 
     private:
-        std::vector<workbench> _workbenches;
+        struct edge {
+            edge(workbench* target, double weight) : _target(target), _weight(weight), _used(false) {}
+
+            workbench* _target;
+            bool       _used;
+            double     _weight;
+        };
+
+        struct header {
+            template <class... Ts>
+            header(Ts&&... args) : _bench(std::forward<Ts>(args)...), _tasks() {}
+
+            workbench         _bench;
+            std::vector<edge> _tasks;
+        };
+        std::vector<header> _workbenches;
     };
 
     class robot {
