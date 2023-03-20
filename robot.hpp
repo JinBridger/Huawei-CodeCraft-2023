@@ -46,6 +46,33 @@ namespace msc {
             }
         }
 
+        void update() {
+            std::cin >> _workbench;
+            std::cin >> _item;
+
+            std::cin >> _time_coef;
+            std::cin >> _coll_coef;
+
+            std::cin >> _angle_v;
+            double vx, vy;
+            std::cin >> vx >> vy;
+            _linear_v = sqrt(vx * vx + vy * vy);
+
+            std::cin >> _direction;
+            std::cin >> _x;
+            std::cin >> _y;
+        }
+
+        void update_x_and_y(double x, double y) {
+            _x = x;
+            _y = y;
+        }
+
+        std::string get_state() {
+            return std::exchange(_state, "");
+        }
+
+    private:
         void start_action(bool is_sell, double target_x, double target_y) {
             // Set action
             _target_x      = target_x;
@@ -117,33 +144,6 @@ namespace msc {
             }
         }
 
-        void update() {
-            std::cin >> _workbench;
-            std::cin >> _item;
-
-            std::cin >> _time_coef;
-            std::cin >> _coll_coef;
-
-            std::cin >> _angle_v;
-            double vx, vy;
-            std::cin >> vx >> vy;
-            _linear_v = sqrt(vx * vx + vy * vy);
-
-            std::cin >> _direction;
-            std::cin >> _x;
-            std::cin >> _y;
-        }
-
-        void update_x_and_y(double x, double y) {
-            _x = x;
-            _y = y;
-        }
-
-        std::string get_state() {
-            return std::exchange(_state, "");
-        }
-
-    private:
         double _buy_x;
         double _buy_y;
         double _sell_x;
