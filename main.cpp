@@ -35,10 +35,10 @@ int main() {
                 double buy_y    = benchgod.get_workbench(buy_num).y;
                 double sell_x   = benchgod.get_workbench(sell_num).x;
                 double sell_y   = benchgod.get_workbench(sell_num).y;
-                robots[i].begin_action(buy_x, buy_y, sell_x, sell_y);
+                robots[i].start_task(buy_x, buy_y, sell_x, sell_y);
             }
             else
-                robots[i].continue_action();
+                robots[i].continue_task();
         }
         io.send();
     }

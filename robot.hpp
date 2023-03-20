@@ -10,17 +10,18 @@
 namespace msc {
     class robot {
     public:
-        robot(bench_god& b, int id) : _bench_god(b), _task_status(Idle), _action_type(Waiting), _id(id) {}
+        robot(bench_god& b, int id) : _bench_god(b), _action_status(Idle), _task_status(Waiting), _id(id) {}
 
         bool is_idle() const {
-            return (_task_status == Idle) ? true : false;
+            return (_action_status == Idle) ? true : false;
         }
 
         bool is_waiting() const {
-            return (_action_type == Waiting) ? true : false;
+            return (_task_status == Waiting) ? true : false;
         }
 
-        void begin_action(double buy_x, double buy_y, double sell_x, double sell_y) {
+        void start_task(double buy_x, double buy_y, double sell_x, double sell_y) {
+            // Called by scheduler to start a task
             _buy_x  = buy_x;
             _buy_y  = buy_y;
             _sell_x = sell_x;
@@ -28,41 +29,38 @@ namespace msc {
 
             std::cerr << "[LOG] Robot " << _id << " Buy: [" << buy_x << ", " << buy_y << "]\tSell: [" << sell_x << ", "
                       << sell_y << "]" << std::endl;
-            _action_type = Buying;
-            start_task(0, buy_x, buy_y);
+            _task_status = Buying;
+            start_action(0, buy_x, buy_y);
         }
 
-        void continue_action() {
-            if (_task_status == Busy)
-                continue_task();
-            if (_task_status == Idle && _action_type == Buying) {
-                _action_type = Selling;
-                start_task(1, _sell_x, _sell_y);
+        void continue_task() {
+            // Call by scheduler to continueu the unfinished task
+            if (_action_status == Busy)
+                continue_action();
+            if (_action_status == Idle && _task_status == Buying) {
+                _task_status = Selling;
+                start_action(1, _sell_x, _sell_y);
             }
-            if (_task_status == Idle && _action_type == Selling) {
-                _action_type = Waiting;
+            if (_action_status == Idle && _task_status == Selling) {
+                _task_status = Waiting;
             }
         }
 
-        void start_task(bool is_sell, double target_x, double target_y) {
-            // Called by scheduler when robot is idle
-            // Start a new task
-
-            // Set task
-            _target_x    = target_x;
-            _target_y    = target_y;
-            _task_status = Busy;
-            _task_type   = is_sell ? Sell : Buy;
+        void start_action(bool is_sell, double target_x, double target_y) {
+            // Set action
+            _target_x      = target_x;
+            _target_y      = target_y;
+            _action_status = Busy;
+            _action_type   = is_sell ? Sell : Buy;
 
             // std::cerr << "[LOG] Robot " << _id << " now going to [" << _target_x << ", " << _target_y << "]"
             //   << std::endl;
 
-            continue_task();
+            continue_action();
         }
 
-        void continue_task() {
-            // Called by scheduler when robot is busy
-            // Continue the unfinished task
+        void continue_action() {
+            // Continue the unfinished action
 
             // Calculate the target angle of workbench
             double dy           = _target_y - _y;
@@ -86,11 +84,11 @@ namespace msc {
             // Calculate the distance between robot and workbench
             double delta_dis = sqrt(dy * dy + dx * dx);
 
-            if (_task_status == Busy && delta_dis < 0.4) {
-                if (_task_type == Buy) {
+            if (_action_status == Busy && delta_dis < 0.4) {
+                if (_action_type == Buy) {
                     buy();
                 }
-                if (_task_type == Sell) {
+                if (_action_type == Sell) {
                     sell();
                 }
                 forward(0);
@@ -100,9 +98,9 @@ namespace msc {
                 // std::cerr << "[LOG] Robot " << _id << " dis is " << delta_dis << std::endl;
                 // std::cerr << "[LOG] Robot " << _id << " set to idle" << std::endl;
 
-                _task_status = Idle;
+                _action_status = Idle;
             }
-            if (_task_status == Busy) {
+            if (_action_status == Busy) {
                 // Correction the direction
                 if (abs(delta_angle) > get_angle_threshold(delta_dis, abs(delta_angle))) {
                     if (delta_angle > 0)
@@ -168,17 +166,17 @@ namespace msc {
             return 2;
         }
 
-        enum TaskStatus { Idle, Busy };
-        enum TaskType { Buy, Sell };
-        enum ActionType { Waiting, Buying, Selling };
+        enum ActionStatus { Idle, Busy };
+        enum ActionType { Buy, Sell };
+        enum TaskStatus { Waiting, Buying, Selling };
 
         bench_god& _bench_god;
         double     _target_x;
         double     _target_y;
 
-        TaskStatus _task_status;
-        TaskType   _task_type;
-        ActionType _action_type;
+        ActionStatus _action_status;
+        ActionType   _action_type;
+        TaskStatus   _task_status;
 
         // Low level API
         double area() const {
