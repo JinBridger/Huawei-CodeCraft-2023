@@ -22,7 +22,7 @@ int main() {
     vector<msc::robot> robots;
 
     for (int i = 0; i < ROBOT_N; ++i)
-        robots.push_back(msc::robot(benchgod, i));
+        robots.push_back(msc::robot(i));
 
     msc::io io(robots, benchgod);
 
@@ -30,13 +30,9 @@ int main() {
         io.receive();
         for (int i = 0; i < ROBOT_N; ++i) {
             if (robots[i].is_waiting()) {
-                int    buy_num  = get_rand();
-                int    sell_num = get_rand();
-                double buy_x    = benchgod.get_workbench(buy_num).x;
-                double buy_y    = benchgod.get_workbench(buy_num).y;
-                double sell_x   = benchgod.get_workbench(sell_num).x;
-                double sell_y   = benchgod.get_workbench(sell_num).y;
-                robots[i].start_task(buy_x, buy_y, sell_x, sell_y);
+                int buy_num  = get_rand();
+                int sell_num = get_rand();
+                robots[i].start_task(msc::task{ benchgod.get_workbench(buy_num).p, benchgod.get_workbench(sell_num).p });
             }
             else
                 robots[i].continue_task();

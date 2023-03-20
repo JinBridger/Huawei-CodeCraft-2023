@@ -22,9 +22,9 @@ namespace msc {
                 std::getline(std::cin, cur_line);
                 for (int y = 0; y < cur_line.size(); ++y) {
                     if (std::isdigit(cur_line[y]))
-                        _bench_god.add_bench(x / 2.0, 50 - y / 2.0, cur_line[y] - '0');
+                        _bench_god.add_bench(point{ x / 2.0, 50 - y / 2.0 }, cur_line[y] - '0');
                     else if (cur_line[y] == 'A') {
-                        _robots[robot_index++].update_x_and_y(x / 2.0, 50 - y / 2.0);
+                        _robots[robot_index++].update_pos({ x / 2.0, 50 - y / 2.0 });
                     }
                 }
             }

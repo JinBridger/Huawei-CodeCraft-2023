@@ -3,20 +3,57 @@
 #include "core.hpp"
 
 #include <bitset>
+#include <cmath>
 #include <iostream>
+#include <istream>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace msc {
+    struct point {
+        point(double x = 0.0, double y = 0.0) noexcept : x(x), y(y) {}
+        point(const point& p) noexcept : x(p.x), y(p.y) {}
+        point(point&& p) noexcept : x(p.x), y(p.y) {}
+
+        double distance(const point& p) const noexcept {
+            return sqrt((p.x - x) * (p.x - x) + (p.y - y) * (p.y - y));
+        }
+
+        double arctan(const point& p) const noexcept {
+            return atan((p.y - y) / (p.x - x));
+        }
+
+        friend std::istream& operator>>(std::istream& is, point& p) {
+            return is >> p.x >> p.y;
+        }
+        friend std::ostream& operator<<(std::ostream& os, point& p) {
+            return os << p.x << p.y;
+        }
+        point& operator=(const point& p) noexcept {
+            if (std::addressof(p) != this)
+                x = p.x, y = p.y;
+            return *this;
+        }
+        point& operator=(point&& p) noexcept {
+            return *this = p;
+        }
+
+        double x, y;
+    };
+
+    struct task {
+        point sell, buy;
+    };
+
     struct workbench {
-        workbench(double x, double y, int type)
-            : x(x), y(y), type(type), left_time(0), material_state(), product_state(), id(0) {}
+        workbench(const point& p, int type)
+            : p(p), type(type), left_time(0), material_state(), product_state(), id(0) {}
 
         int id;
         int type;
 
-        double x;
-        double y;
+        point p;
 
         int            left_time;  // in unit frame
         std::bitset<6> material_state;
@@ -37,8 +74,7 @@ namespace msc {
         void update() {
             for (auto& ben : _workbenches) {
                 std::cin >> ben.type;
-                std::cin >> ben.x;
-                std::cin >> ben.y;
+                std::cin >> ben.p;
                 std::cin >> ben.left_time;
                 std::cin >> ben.material_state;
                 std::cin >> ben.product_state;
@@ -56,39 +92,38 @@ namespace msc {
 
     class robot {
     public:
-        robot(bench_god& b, int id) : _bench_god(b), _action_status(Idle), _task_status(Waiting), _id(id) {}
+        robot(int id) : _action_status(Idle), _task_status(Waiting), _id(id), _task() {}
 
-        bool is_idle() const {
-            return (_action_status == Idle) ? true : false;
+        bool is_waiting() const noexcept {
+            return _task_status == Waiting;
         }
 
-        bool is_waiting() const {
-            return (_task_status == Waiting) ? true : false;
+        bool is_busy() const noexcept {
+            return _action_status > 0;
         }
 
-        void start_task(double buy_x, double buy_y, double sell_x, double sell_y) {
+        void start_task(const task& t) {
             // Called by scheduler to start a task
-            _buy_x  = buy_x;
-            _buy_y  = buy_y;
-            _sell_x = sell_x;
-            _sell_y = sell_y;
+            _task = t;
 
-            std::cerr << "[LOG] Robot " << _id << " Buy: [" << buy_x << ", " << buy_y << "]\tSell: [" << sell_x << ", "
-                      << sell_y << "]" << std::endl;
+            std::cerr << "[LOG] Robot " << _id << " Buy: [" << _task.buy.x << ", " << _task.buy.y << "]\tSell: ["
+                      << _task.sell.x << ", " << _task.sell.y << "]" << std::endl;
             _task_status = Buying;
-            start_action(0, buy_x, buy_y);
+            start_action<Buy>(_task.buy);
         }
 
         void continue_task() {
             // Call by scheduler to continueu the unfinished task
-            if (_action_status == Busy)
+            if (is_busy())
                 continue_action();
-            if (_action_status == Idle && _task_status == Buying) {
-                _task_status = Selling;
-                start_action(1, _sell_x, _sell_y);
-            }
-            if (_action_status == Idle && _task_status == Selling) {
-                _task_status = Waiting;
+            else {
+                if (_task_status == Buying) {
+                    _task_status = Selling;
+                    start_action<Sell>(_task.sell);
+                }
+                if (_task_status == Selling) {
+                    _task_status = Waiting;
+                }
             }
         }
 
@@ -105,13 +140,11 @@ namespace msc {
             _linear_v = sqrt(vx * vx + vy * vy);
 
             std::cin >> _direction;
-            std::cin >> _x;
-            std::cin >> _y;
+            std::cin >> _pos;
         }
 
-        void update_x_and_y(double x, double y) {
-            _x = x;
-            _y = y;
+        void update_pos(const point& p) noexcept {
+            _pos = p;
         }
 
         std::string get_state() {
@@ -119,12 +152,17 @@ namespace msc {
         }
 
     private:
-        void start_action(bool is_sell, double target_x, double target_y) {
+        enum ActionStatus { Idle, Buy, Sell };
+        enum TaskStatus { Waiting, Buying, Selling };
+
+        template <ActionStatus status>
+        void start_action(const point& target) {
             // Set action
-            _target_x      = target_x;
-            _target_y      = target_y;
-            _action_status = Busy;
-            _action_type   = is_sell ? Sell : Buy;
+            _target = target;
+            if constexpr (status == Sell)
+                _action_status = Sell;
+            else
+                _action_status = Buy;
 
             // std::cerr << "[LOG] Robot " << _id << " now going to [" << _target_x << ", " << _target_y << "]"
             //   << std::endl;
@@ -136,15 +174,11 @@ namespace msc {
             // Continue the unfinished action
 
             // Calculate the target angle of workbench
-            double dy           = _target_y - _y;
-            double dx           = _target_x - _x;
-            double target_angle = atan(dy / dx);
-            if (dx < 0) {
-                if (dy >= 0)
-                    target_angle += PI;
-                if (dy < 0)
-                    target_angle -= PI;
-            }
+            double target_angle = _pos.arctan(_target);
+
+            // copysign()
+            if (_target.x < _pos.x)
+                target_angle += copysign(PI, _target.y - _pos.y);
 
             // Calculate the angle between robot and workbench
             double delta_angle = target_angle - _direction;
@@ -155,13 +189,13 @@ namespace msc {
                 delta_angle -= 2 * PI;
 
             // Calculate the distance between robot and workbench
-            double delta_dis = sqrt(dy * dy + dx * dx);
+            double delta_dis = _pos.distance(_target);
 
-            if (_action_status == Busy && delta_dis < 0.4) {
-                if (_action_type == Buy) {
+            if (is_busy() && delta_dis < 0.4) {
+                if (_action_status == Buy) {
                     buy();
                 }
-                if (_action_type == Sell) {
+                if (_action_status == Sell) {
                     sell();
                 }
                 forward(0);
@@ -173,7 +207,7 @@ namespace msc {
 
                 _action_status = Idle;
             }
-            if (_action_status == Busy) {
+            if (is_busy()) {
                 // Correction the direction
                 if (abs(delta_angle) > get_angle_threshold(delta_dis, abs(delta_angle))) {
                     if (delta_angle > 0)
@@ -189,11 +223,6 @@ namespace msc {
                 forward(get_speed_threshold(delta_dis, abs(delta_angle)));
             }
         }
-
-        double _buy_x;
-        double _buy_y;
-        double _sell_x;
-        double _sell_y;
 
         double get_angle_threshold(double dt_dis, double dt_angle) {
             if (dt_dis > 20)
@@ -211,18 +240,6 @@ namespace msc {
                 return 5;
             return 2;
         }
-
-        enum ActionStatus { Idle, Busy };
-        enum ActionType { Buy, Sell };
-        enum TaskStatus { Waiting, Buying, Selling };
-
-        bench_god& _bench_god;
-        double     _target_x;
-        double     _target_y;
-
-        ActionStatus _action_status;
-        ActionType   _action_type;
-        TaskStatus   _task_status;
 
         // Low level API
         double area() const {
@@ -274,10 +291,15 @@ namespace msc {
         double _linear_v;  // linear velocity
 
         double _direction;
-        double _x;
-        double _y;
+        point  _pos;
 
-    private:
+        point _target;
+
+        task _task;
+
+        ActionStatus _action_status;
+        TaskStatus   _task_status;
+
         std::string _state;
     };
 }  // namespace msc
