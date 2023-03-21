@@ -46,7 +46,7 @@ namespace msc {
         }
 
         [[nodiscard]] friend bool operator==(const point& lhs, const point& rhs) noexcept {
-            return lhs.x == rhs.x && lhs.y == rhs.y;
+            return fabs(lhs.x - rhs.x) < 1e-6 && fabs(lhs.y - rhs.y);
         }
 
         [[nodiscard]] friend bool operator!=(const point& lhs, const point& rhs) noexcept {
@@ -78,7 +78,7 @@ namespace msc {
             return _type;
         }
 
-        bool is_producing() const noexcept {
+        bool produced() const noexcept {
             return _product_state;
         }
 
@@ -96,136 +96,19 @@ namespace msc {
         bool           _product_state;
     };
 
-    class bench_god {
-    public:
-        bench_god() {
-            _workbenches.reserve(50);
-        }
-        template <class... Ts>
-        void add_bench(Ts&&... args) {
-            _workbenches.emplace_back(std::forward<Ts>(args)...);
-            _indeces.emplace(_workbenches.back()._bench.pos(), _workbenches.size() - 1);
-        }
+    // TODO: A heuristic function to calculate profit of a new task
+    // This is from a purchasable workbench.
+    inline double task_profit(const workbench& src, const workbench& dest) {
+        assert(can_product(src.type()));
+        return price_on_sell(src.type()) - price_on_buy(src.type());
+    }
 
-        void analyze() {
-            for (auto& h : _workbenches) {
-                if (can_product(h._bench.type())) {
-                    for (auto& other : _workbenches) {
-                        if (can_purchase(other._bench.type(), h._bench.type()))
-                            h._tasks.emplace_back(std::addressof(other._bench), task_profit());
-                    }
-                    std::sort(h._tasks.begin(), h._tasks.end(),
-                              [](const edge& l, const edge& r) { return l._profit < r._profit; });
-                }
-                if (can_consume(h._bench.type())) {
-                    for (auto& other : _workbenches) {
-                        if (can_product(other._bench.type()))
-                            h._next_tasks.emplace_back(std::addressof(other._bench), next_task_profit());
-                    }
-                    std::sort(h._tasks.begin(), h._tasks.end(),
-                              [](const edge& l, const edge& r) { return l._profit < r._profit; });
-                }
-            }
-        }
-
-        size_t size() noexcept {
-            return _workbenches.size();
-        }
-
-        friend std::istream& operator>>(std::istream& is, bench_god& god) {
-            for (auto& h : god._workbenches) {
-                is >> h._bench;
-            }
-            return is;
-        }
-
-        task get_task(const point& pos) noexcept {
-            auto& h   = _workbenches[_indeces.find(pos)->second];
-            auto  res = std::find_if(h._tasks.begin(), h._tasks.end(), [](const edge& e) { return !e._used; });
-            assert(res != h._tasks.end());
-
-            return { h._bench.pos(), res->_target->pos(), [&] { res->_used = false; } };
-        }
-
-        task get_next_task(const point& pos) noexcept {
-            auto& h  = _workbenches[_indeces.find(pos)->second];
-            auto res = std::find_if(h._next_tasks.begin(), h._next_tasks.end(), [](const edge& e) { return !e._used; });
-            assert(res != h._tasks.end());
-
-            return { h._bench.pos(), res->_target->pos(), [&] { res->_used = false; } };
-        }
-
-#ifdef DEBUG
-
-        workbench& get_workbench(int index) {
-            return _workbenches[index]._bench;
-        }
-#endif
-
-    private:
-        struct point_hash {
-            static_assert(std::is_standard_layout_v<point>, "class point should be standard layout.");
-            using result_type   = size_t;
-            using argument_type = point;
-            [[nodiscard]] size_t operator()(const point& p) const {
-                constexpr uint64_t seed = 0xdeadbeef;
-                constexpr uint64_t m    = 0xc6a4a7935bd1e995;
-                constexpr uint64_t r    = 47;
-
-                uint64_t h = seed ^ (sizeof(point) * m);
-
-                const uint64_t* data        = reinterpret_cast<const uint64_t*>(&p);
-                const uint64_t  num_doubles = sizeof(point) / sizeof(double);
-                for (size_t i = 0; i < num_doubles; i++) {
-                    uint64_t k = data[i];
-                    k *= m;
-                    k ^= k >> r;
-                    k *= m;
-
-                    h ^= k;
-                    h *= m;
-                }
-
-                const size_t num_remaining_bytes = sizeof(point) % sizeof(double);
-                if (num_remaining_bytes != 0) {
-                    uint64_t k = 0;
-                    memcpy(&k, reinterpret_cast<const uint8_t*>(&p) + sizeof(msc::point) - num_remaining_bytes,
-                           num_remaining_bytes);
-                    k *= m;
-                    k ^= k >> r;
-                    k *= m;
-
-                    h ^= k;
-                    h *= m;
-                }
-
-                h ^= h >> r;
-                h *= m;
-                h ^= h >> r;
-
-                return static_cast<size_t>(h);
-            }
-        };
-        struct edge {
-            edge(workbench* target, double weight) : _target(target), _profit(weight), _used(false) {}
-
-            workbench* _target;
-            bool       _used;
-            double     _profit;
-        };
-
-        struct header {
-            template <class... Ts>
-            header(Ts&&... args) : _bench(std::forward<Ts>(args)...), _tasks(), _next_tasks() {}
-
-            workbench         _bench;
-            std::vector<edge> _tasks;
-            std::vector<edge> _next_tasks;
-        };
-
-        std::vector<header>                           _workbenches;
-        std::unordered_map<point, size_t, point_hash> _indeces;
-    };
+    // TODO: A heuristic function to calculate profit when the robot completes a task and is ready to start a new one
+    // This is from a consumable workbench.
+    // Typically, it equals TASK-PROFIT - DISTANCE-COST
+    constexpr double next_task_profit() {
+        return 0.0;
+    }
 
     class robot {
     public:
@@ -241,6 +124,8 @@ namespace msc {
 
         void start_task(const task& t) {
             // Called by scheduler to start a task
+            if (fabs(t.sell.x) < 1e-6)
+                return;
             _task = t;
 
             std::cerr << "[LOG] Robot " << _id << " Buy: [" << _task.buy.x << ", " << _task.buy.y << "]\tSell: ["
@@ -280,6 +165,10 @@ namespace msc {
 
         std::string get_state() {
             return std::exchange(_state, "");
+        }
+
+        point pos() const {
+            return _pos;
         }
 
     private:
@@ -322,11 +211,12 @@ namespace msc {
             // Calculate the distance between robot and workbench
             double delta_dis = _pos.distance(_target);
 
+            std::cerr << "ACTION STATUS  " << _action_status << std::endl;
             if (is_busy() && delta_dis < 0.4) {
                 if (_action_status == Buy) {
                     buy();
                 }
-                if (_action_status == Sell) {
+                else if (_action_status == Sell) {
                     sell();
                 }
                 forward(0);
@@ -394,20 +284,16 @@ namespace msc {
         }
 
         bool buy() {
-            // _state += "buy " + std::to_string(_id) + "\n";
+            _state += "buy " + std::to_string(_id) + "\n";
             return true;
         }
         bool sell() {
-            // _state += "sell " + std::to_string(_id) + "\n";
+            _state += "sell " + std::to_string(_id) + "\n";
             return true;
         }
         bool destroy() {
             _state += "destroy " + std::to_string(_id) + "\n";
             return true;
-        }
-
-        double sell_price() const {
-            return origin_sell_price(_item) * _time_coef * _coll_coef;
         }
 
         int _id;

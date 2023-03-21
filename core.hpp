@@ -30,7 +30,7 @@ namespace msc {
         return -1;
     }
 
-    constexpr double origin_sell_price(int type) {
+    constexpr double price_on_sell(int type) {
         switch (type) {
         case 1:
             return 6'000;
@@ -51,7 +51,7 @@ namespace msc {
         return -1;
     }
 
-    constexpr bool can_product(int type) {
+    inline bool can_product(int type) {
         return 1 <= type && type <= 7;
     }
 
@@ -59,13 +59,13 @@ namespace msc {
     constexpr bool can_purchase(int type, int material) {
         switch (type) {
         case 4:
-            return material == 1 && material == 2;
+            return material == 1 || material == 2;
         case 5:
-            return material == 1 && material == 3;
+            return material == 1 || material == 3;
         case 6:
-            return material == 2 && material == 3;
+            return material == 2 || material == 3;
         case 7:
-            return material == 4 && material == 5 && material == 6;
+            return material == 4 || material == 5 || material == 6;
         case 8:
             return material == 7;
         case 9:
@@ -78,17 +78,4 @@ namespace msc {
         return 4 <= type && type <= 7;
     }
 
-
-    // TODO: A heuristic function to calculate profit of a new task
-    // This is from a purchasable workbench.
-    constexpr double task_profit() {
-        return 0.0;
-    }
-
-    // TODO: A heuristic function to calculate profit when the robot completes a task and is ready to start a new one
-    // This is from a consumable workbench.
-    // Typically, it equals NEXT-TASK-PROFIT - DISTANCE-COST
-    constexpr double next_task_profit() {
-        return 0.0;
-    }
 }  // namespace msc

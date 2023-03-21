@@ -1,10 +1,12 @@
 #pragma once
 
+#include "algo.hpp"
 #include "core.hpp"
 #include "data_types.hpp"
 
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <stdlib.h>
@@ -30,7 +32,7 @@ namespace msc {
             }
 
             // Maybe we will do some pretask here
-            // PRETASK();
+            _bench_god.analyze();
             // Then output OK!
 
             // Check if ended correctly
@@ -53,10 +55,26 @@ namespace msc {
             // Add the start and end of output
             instructions = std::to_string(_frame_id) + "\n" + instructions + "OK";
             std::cout << instructions << std::endl;
+
+            std::cerr << "[LOG] FRAME: " << _frame_id << std::endl;
+            std::cerr << instructions << std::endl;
             // std::cerr << "[LOG] Successfully output frame " << _frame_id << std::endl;
         }
 
         void receive() {
+            // std::vector<std::string> str;
+            // while (true) {
+
+            //     std::string tmp;
+            //     std::getline(std::cin, tmp);
+            //     if (tmp == "OK") {
+            //         std::copy(str.begin(), str.end(), std::ostream_iterator<std::string>(std::cerr, "\n"));
+            //         exit(0);
+            //     }
+            //     else {
+            //         str.push_back(tmp);
+            //     }
+            // }
             std::cin >> _frame_id >> _coin_cnt;
 
             int workbench_cnt;
@@ -78,7 +96,7 @@ namespace msc {
                 exit(1);
             }
 
-            // std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
+            //  std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
         }
 
     private:
