@@ -51,10 +51,11 @@ namespace msc {
         return -1;
     }
 
-    constexpr bool is_productible(int type) {
+    constexpr bool can_product(int type) {
         return 1 <= type && type <= 7;
     }
 
+    // NOTE: This function is for the workbench, so different primitives are used to distinguish it from the robot.
     constexpr bool can_purchase(int type, int material) {
         switch (type) {
         case 4:
@@ -68,8 +69,26 @@ namespace msc {
         case 8:
             return material == 7;
         case 9:
-            return is_productible(type);
+            return can_product(type);
         }
         return false;
+    }
+
+    constexpr bool can_consume(int type) {
+        return 4 <= type && type <= 7;
+    }
+
+
+    // TODO: A heuristic function to calculate profit of a new task
+    // This is from a purchasable workbench.
+    constexpr double task_profit() {
+        return 0.0;
+    }
+
+    // TODO: A heuristic function to calculate profit when the robot completes a task and is ready to start a new one
+    // This is from a consumable workbench.
+    // Typically, it equals NEXT-TASK-PROFIT - DISTANCE-COST
+    constexpr double next_task_profit() {
+        return 0.0;
     }
 }  // namespace msc

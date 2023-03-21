@@ -63,11 +63,11 @@ namespace msc {
             std::cin >> workbench_cnt;
 
             // Input workbench
-            _bench_god.update();
+            std::cin >> _bench_god;
 
             // Input robots
             for (int i = 0; i < ROBOT_N; ++i) {
-                _robots[i].update();
+                std::cin >> _robots[i];
             }
 
             // Check if ended correctly

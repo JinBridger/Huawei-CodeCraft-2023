@@ -4,11 +4,15 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cassert>
 #include <cmath>
+#include <functional>
 #include <iostream>
-#include <istream>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -29,7 +33,7 @@ namespace msc {
         friend std::istream& operator>>(std::istream& is, point& p) {
             return is >> p.x >> p.y;
         }
-        friend std::ostream& operator<<(std::ostream& os, point& p) {
+        friend std::ostream& operator<<(std::ostream& os, const point& p) {
             return os << p.x << p.y;
         }
         point& operator=(const point& p) noexcept {
@@ -41,24 +45,55 @@ namespace msc {
             return *this = p;
         }
 
+        [[nodiscard]] friend bool operator==(const point& lhs, const point& rhs) noexcept {
+            return lhs.x == rhs.x && lhs.y == rhs.y;
+        }
+
+        [[nodiscard]] friend bool operator!=(const point& lhs, const point& rhs) noexcept {
+            return !(lhs == rhs);
+        }
+
         double x, y;
     };
 
     struct task {
-        point sell, buy;
+        point                 sell, buy;
+        std::function<void()> clear_up;
     };
 
-    struct workbench {
+    class workbench {
+    public:
         workbench(const point& p, int type)
-            : p(p), type(type), left_time(0), material_state(), product_state(){}
+            : _pos(p), _type(type), _left_time(0), _material_state(), _product_state() {}
 
-        int type;
+        bool operator[](size_t idx) {
+            return _material_state[idx];
+        }
 
-        point p;
+        friend std::istream& operator>>(std::istream& is, workbench& ben) {
+            return is >> ben._type >> ben._pos >> ben._left_time >> ben._material_state >> ben._product_state;
+        }
 
-        int            left_time;  // in unit frame
-        std::bitset<6> material_state;
-        bool           product_state;
+        int type() const noexcept {
+            return _type;
+        }
+
+        bool is_producing() const noexcept {
+            return _product_state;
+        }
+
+        const point& pos() const noexcept {
+            return _pos;
+        }
+
+    private:
+        int _type;
+
+        point _pos;
+
+        int            _left_time;  // in unit frame
+        std::bitset<8> _material_state;
+        bool           _product_state;
     };
 
     class bench_god {
@@ -69,17 +104,26 @@ namespace msc {
         template <class... Ts>
         void add_bench(Ts&&... args) {
             _workbenches.emplace_back(std::forward<Ts>(args)...);
+            _indeces.emplace(_workbenches.back()._bench.pos(), _workbenches.size() - 1);
         }
 
         void analyze() {
             for (auto& h : _workbenches) {
-                if (is_productible(h._bench.type)) {
+                if (can_product(h._bench.type())) {
                     for (auto& other : _workbenches) {
-                        if (can_purchase(other._bench.type, h._bench.type))
-                            h._tasks.emplace_back(std::addressof(other._bench), 0 /* calculate weight here*/);
+                        if (can_purchase(other._bench.type(), h._bench.type()))
+                            h._tasks.emplace_back(std::addressof(other._bench), task_profit());
                     }
                     std::sort(h._tasks.begin(), h._tasks.end(),
-                              [](const edge& l, const edge& r) { return l._weight < r._weight; });
+                              [](const edge& l, const edge& r) { return l._profit < r._profit; });
+                }
+                if (can_consume(h._bench.type())) {
+                    for (auto& other : _workbenches) {
+                        if (can_product(other._bench.type()))
+                            h._next_tasks.emplace_back(std::addressof(other._bench), next_task_profit());
+                    }
+                    std::sort(h._tasks.begin(), h._tasks.end(),
+                              [](const edge& l, const edge& r) { return l._profit < r._profit; });
                 }
             }
         }
@@ -88,38 +132,99 @@ namespace msc {
             return _workbenches.size();
         }
 
-        void update() {
-            for (auto& h : _workbenches) {
-                std::cin >> h._bench.type;
-                std::cin >> h._bench.p;
-                std::cin >> h._bench.left_time;
-                std::cin >> h._bench.material_state;
-                std::cin >> h._bench.product_state;
+        friend std::istream& operator>>(std::istream& is, bench_god& god) {
+            for (auto& h : god._workbenches) {
+                is >> h._bench;
             }
+            return is;
         }
 
-        // TO REMOVE
-        workbench& get_workbench(int workbench_num) {
-            return _workbenches[workbench_num]._bench;
+        task get_task(const point& pos) noexcept {
+            auto& h   = _workbenches[_indeces.find(pos)->second];
+            auto  res = std::find_if(h._tasks.begin(), h._tasks.end(), [](const edge& e) { return !e._used; });
+            assert(res != h._tasks.end());
+
+            return { h._bench.pos(), res->_target->pos(), [&] { res->_used = false; } };
         }
+
+        task get_next_task(const point& pos) noexcept {
+            auto& h  = _workbenches[_indeces.find(pos)->second];
+            auto res = std::find_if(h._next_tasks.begin(), h._next_tasks.end(), [](const edge& e) { return !e._used; });
+            assert(res != h._tasks.end());
+
+            return { h._bench.pos(), res->_target->pos(), [&] { res->_used = false; } };
+        }
+
+#ifdef DEBUG
+
+        workbench& get_workbench(int index) {
+            return _workbenches[index]._bench;
+        }
+#endif
 
     private:
+        struct point_hash {
+            static_assert(std::is_standard_layout_v<point>, "class point should be standard layout.");
+            using result_type   = size_t;
+            using argument_type = point;
+            [[nodiscard]] size_t operator()(const point& p) const {
+                constexpr uint64_t seed = 0xdeadbeef;
+                constexpr uint64_t m    = 0xc6a4a7935bd1e995;
+                constexpr uint64_t r    = 47;
+
+                uint64_t h = seed ^ (sizeof(point) * m);
+
+                const uint64_t* data        = reinterpret_cast<const uint64_t*>(&p);
+                const uint64_t  num_doubles = sizeof(point) / sizeof(double);
+                for (size_t i = 0; i < num_doubles; i++) {
+                    uint64_t k = data[i];
+                    k *= m;
+                    k ^= k >> r;
+                    k *= m;
+
+                    h ^= k;
+                    h *= m;
+                }
+
+                const size_t num_remaining_bytes = sizeof(point) % sizeof(double);
+                if (num_remaining_bytes != 0) {
+                    uint64_t k = 0;
+                    memcpy(&k, reinterpret_cast<const uint8_t*>(&p) + sizeof(msc::point) - num_remaining_bytes,
+                           num_remaining_bytes);
+                    k *= m;
+                    k ^= k >> r;
+                    k *= m;
+
+                    h ^= k;
+                    h *= m;
+                }
+
+                h ^= h >> r;
+                h *= m;
+                h ^= h >> r;
+
+                return static_cast<size_t>(h);
+            }
+        };
         struct edge {
-            edge(workbench* target, double weight) : _target(target), _weight(weight), _used(false) {}
+            edge(workbench* target, double weight) : _target(target), _profit(weight), _used(false) {}
 
             workbench* _target;
             bool       _used;
-            double     _weight;
+            double     _profit;
         };
 
         struct header {
             template <class... Ts>
-            header(Ts&&... args) : _bench(std::forward<Ts>(args)...), _tasks() {}
+            header(Ts&&... args) : _bench(std::forward<Ts>(args)...), _tasks(), _next_tasks() {}
 
             workbench         _bench;
             std::vector<edge> _tasks;
+            std::vector<edge> _next_tasks;
         };
-        std::vector<header> _workbenches;
+
+        std::vector<header>                           _workbenches;
+        std::unordered_map<point, size_t, point_hash> _indeces;
     };
 
     class robot {
@@ -153,26 +258,20 @@ namespace msc {
                     _task_status = Selling;
                     start_action<Sell>(_task.sell);
                 }
-                if (_task_status == Selling) {
+                else if (_task_status == Selling) {
                     _task_status = Waiting;
+                    if (_task.clear_up)
+                        _task.clear_up();
                 }
             }
         }
 
-        void update() {
-            std::cin >> _workbench;
-            std::cin >> _item;
-
-            std::cin >> _time_coef;
-            std::cin >> _coll_coef;
-
-            std::cin >> _angle_v;
+        friend std::istream& operator>>(std::istream& is, robot& r) {
+            is >> r._workbench >> r._item >> r._time_coef >> r._coll_coef >> r._angle_v;
             double vx, vy;
-            std::cin >> vx >> vy;
-            _linear_v = sqrt(vx * vx + vy * vy);
-
-            std::cin >> _direction;
-            std::cin >> _pos;
+            is >> vx >> vy;
+            r._linear_v = sqrt(vx * vx + vy * vy);
+            return is >> r._direction >> r._pos;
         }
 
         void update_pos(const point& p) noexcept {

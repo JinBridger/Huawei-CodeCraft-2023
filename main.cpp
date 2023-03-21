@@ -1,4 +1,5 @@
 // #include "algo.hpp"
+#define DEBUG
 #include "data_types.hpp"
 #include "io.hpp"
 
@@ -6,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
@@ -32,7 +34,7 @@ int main() {
             if (robots[i].is_waiting()) {
                 int buy_num  = get_rand();
                 int sell_num = get_rand();
-                robots[i].start_task(msc::task{ benchgod.get_workbench(buy_num).p, benchgod.get_workbench(sell_num).p });
+                robots[i].start_task(msc::task{ benchgod.get_workbench(buy_num).pos(), benchgod.get_workbench(sell_num).pos() });
             }
             else
                 robots[i].continue_task();
