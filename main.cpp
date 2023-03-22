@@ -22,7 +22,7 @@ using namespace std;
 // }
 
 int main() {
-     //freopen("C:/Users/ASUS/Desktop/fake_input.txt", "r", stdin);
+    // freopen("C:/Users/ASUS/Desktop/fake_input.txt", "r", stdin);
     msc::bench_god     benchgod;
     vector<msc::robot> robots;
 
@@ -35,16 +35,29 @@ int main() {
 
     // std::cerr << "[LOG] IORES: " << iores << std::endl;
 
+    // long long max_time = 0;
     while (1) {
         io.receive();
+        // auto start = std::chrono::system_clock::now();
+
         for (int i = 0; i < ROBOT_N; ++i) {
-            if (robots[i].is_waiting()) {
+            if (robots[i].is_waiting() && io.get_frame_id() < 8500) {
                 msc::point pos = robots[i].pos();
                 robots[i].start_task(benchgod.get_task(pos));
             }
-            else
-                robots[i].continue_task();
+            else {
+                if (!robots[i].is_waiting())
+                    robots[i].continue_task();
+            }
         }
+        // End timer
+        // auto end = std::chrono::system_clock::now();
+        // Calculate time in ms
+        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+        // std::cerr << "[LOG] CALC TIME: " << duration.count() << " us" << std::endl;
+        // max_time = std::max(max_time, duration.count());
+        // std::cerr << "[LOG] MAX CALC TIME: " << max_time << " us" << std::endl;
         io.send();
     }
 

@@ -263,19 +263,19 @@ namespace msc {
 
         double get_angle_threshold(double dt_dis, double dt_angle) {
             if (dt_dis > 20)
-                return 0.08;
-            return 0.04;
+                return 0.12;
+            return 0.06;
         }
 
         double get_speed_threshold(double dt_dis, double dt_angle) {
             if (dt_dis > 2) {
-                if (dt_angle < 0.1)
+                if (dt_angle < 0.2)
                     return 6;
-                return 0;
+                return 3;
             }
-            if (dt_angle < 0.04)
-                return 5;
-            return 2;
+            if (dt_angle < 0.08)
+                return 6;
+            return 4;
         }
 
         // Low level API

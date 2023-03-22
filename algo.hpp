@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <optional>
 #include <vector>
@@ -106,7 +107,6 @@ namespace msc {
         };
 
         std::vector<header> _workbenches;
-        std::vector<robot>  _robots;
         std::vector<task>   _used_tasks;
     };
 }  // namespace msc

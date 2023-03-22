@@ -124,6 +124,10 @@ namespace msc {
             return true;
         }
 
+        int get_frame_id() const {
+            return _frame_id;
+        }
+
     private:
         int _frame_id = 0;
         int _coin_cnt = 0;
