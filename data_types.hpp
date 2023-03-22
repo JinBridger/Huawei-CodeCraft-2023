@@ -64,11 +64,11 @@ namespace msc {
     class workbench {
     public:
         workbench(const point& p, int type)
-            : _pos(p), _type(type), _left_time(0), _material_state(), _product_state() {}
+            : _pos(p), _type(type), _left_time(0), _material_state(0), _product_state() {}
 
-        bool operator[](size_t idx) {
-            return _material_state[idx];
-        }
+        // bool operator[](size_t idx) {
+        //     return _material_state[idx];
+        // }
 
         friend std::istream& operator>>(std::istream& is, workbench& ben) {
             return is >> ben._type >> ben._pos >> ben._left_time >> ben._material_state >> ben._product_state;
@@ -91,9 +91,9 @@ namespace msc {
 
         point _pos;
 
-        int            _left_time;  // in unit frame
-        std::bitset<8> _material_state;
-        bool           _product_state;
+        int  _left_time;  // in unit frame
+        int  _material_state;
+        bool _product_state;
     };
 
     // TODO: A heuristic function to calculate profit of a new task
@@ -124,6 +124,7 @@ namespace msc {
 
         void start_task(const task& t) {
             // Called by scheduler to start a task
+            std::cerr << "[LOG] CALLED START_TASK" << std::endl;
             if (fabs(t.sell.x) < 1e-6)
                 return;
             _task = t;
@@ -131,7 +132,7 @@ namespace msc {
             std::cerr << "[LOG] Robot " << _id << " Buy: [" << _task.buy.x << ", " << _task.buy.y << "]\tSell: ["
                       << _task.sell.x << ", " << _task.sell.y << "]" << std::endl;
             _task_status = Buying;
-            start_action<Buy>(_task.buy);
+            start_action<Buy>(_task.sell);
         }
 
         void continue_task() {
@@ -141,12 +142,15 @@ namespace msc {
             else {
                 if (_task_status == Buying) {
                     _task_status = Selling;
-                    start_action<Sell>(_task.sell);
+                    _target      = _task.sell;
+                    start_action<Sell>(_task.buy);
                 }
                 else if (_task_status == Selling) {
                     _task_status = Waiting;
-                    if (_task.clear_up)
+                    if (_task.clear_up) {
+                        std::cerr << "[LOG] CALLED_CLEAR_UP" << std::endl;
                         _task.clear_up();
+                    }
                 }
             }
         }
@@ -156,6 +160,7 @@ namespace msc {
             double vx, vy;
             is >> vx >> vy;
             r._linear_v = sqrt(vx * vx + vy * vy);
+            // std::cerr << "[LOG] ROBOT " << r._id << " INPUT VX: " << vx << " VY: " << vy << std::endl;
             return is >> r._direction >> r._pos;
         }
 
@@ -211,12 +216,12 @@ namespace msc {
             // Calculate the distance between robot and workbench
             double delta_dis = _pos.distance(_target);
 
-            std::cerr << "ACTION STATUS  " << _action_status << std::endl;
+            // std::cerr << "ACTION STATUS  " << _action_status << std::endl;
             if (is_busy() && delta_dis < 0.4) {
                 if (_action_status == Buy) {
                     buy();
                 }
-                else if (_action_status == Sell) {
+                if (_action_status == Sell) {
                     sell();
                 }
                 forward(0);
@@ -227,6 +232,7 @@ namespace msc {
                 // std::cerr << "[LOG] Robot " << _id << " set to idle" << std::endl;
 
                 _action_status = Idle;
+                return;
             }
             if (is_busy()) {
                 // Correction the direction

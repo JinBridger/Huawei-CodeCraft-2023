@@ -1,8 +1,9 @@
 // #include "algo.hpp"
+#include <stdio.h>
 #define DEBUG
+#include "algo.hpp"
 #include "data_types.hpp"
 #include "io.hpp"
-#include "algo.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -21,6 +22,7 @@ using namespace std;
 // }
 
 int main() {
+    // freopen("C:/Users/26354/Desktop/test.txt", "r", stdin);
     msc::bench_god     benchgod;
     vector<msc::robot> robots;
 
@@ -29,12 +31,16 @@ int main() {
 
     msc::io io(robots, benchgod);
 
+    // bool iores = io.receive();
+
+    // std::cerr << "[LOG] IORES: " << iores << std::endl;
+
     while (1) {
         io.receive();
-        for (int i = 0; i < 1; ++i) {
+        for (int i = 0; i < ROBOT_N; ++i) {
             if (robots[i].is_waiting()) {
                 msc::point pos = robots[i].pos();
-                msc::task t = benchgod.get_task(pos);
+                msc::task  t   = benchgod.get_task(pos);
                 robots[i].start_task(t);
             }
             else

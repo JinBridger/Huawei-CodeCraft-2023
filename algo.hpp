@@ -41,6 +41,8 @@ namespace msc {
         friend std::istream& operator>>(std::istream& is, bench_god& god) {
             for (auto& h : god._workbenches) {
                 is >> h._bench;
+                // std::cerr << "[LOG] BENCH LOC " << h._bench.pos().x << " " << h._bench.pos().y << " INPUTED"
+                //   << std::endl;
             }
             return is;
         }
@@ -62,7 +64,6 @@ namespace msc {
                     }
                 }
             }
-
 
             // auto& h   = _workbenches[_indeces.find(pos)->second];
             // auto  res = std::find_if(h._tasks.begin(), h._tasks.end(),
@@ -152,7 +153,7 @@ namespace msc {
             std::vector<edge> _next_tasks;
         };
 
-        std::vector<header>                           _workbenches;
-        std::vector<robot>                            _robots;
+        std::vector<header> _workbenches;
+        std::vector<robot>  _robots;
     };
 }  // namespace msc
