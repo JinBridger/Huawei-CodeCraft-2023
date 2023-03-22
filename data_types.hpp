@@ -9,6 +9,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -46,7 +47,7 @@ namespace msc {
         }
 
         [[nodiscard]] friend bool operator==(const point& lhs, const point& rhs) noexcept {
-            return fabs(lhs.x - rhs.x) < 1e-6 && fabs(lhs.y - rhs.y);
+            return fabs(lhs.x - rhs.x) < 1e-6 && fabs(lhs.y - rhs.y) < 1e-6;
         }
 
         [[nodiscard]] friend bool operator!=(const point& lhs, const point& rhs) noexcept {
@@ -56,26 +57,51 @@ namespace msc {
         double x, y;
     };
 
+    struct bench_info {
+        bench_info(const point& p = {}, int t = {}) : pos(p), type(t) {}
+
+        [[nodiscard]] friend bool operator==(const bench_info& lhs, const bench_info& rhs) noexcept {
+            return lhs.pos == rhs.pos;
+        }
+
+        [[nodiscard]] friend bool operator!=(const bench_info& lhs, const bench_info& rhs) noexcept {
+            return !(lhs == rhs);
+        }
+
+        point pos;
+        int   type;
+    };
+
     struct task {
-        point                 sell, buy;
+        task(const bench_info& b = {}, const bench_info& s = {}, std::function<void()> clear = nullptr)
+            : sell(s), buy(b), clear_up(clear) {}
+
+        [[nodiscard]] friend bool operator==(const task& lhs, const task& rhs) noexcept {
+            return lhs.sell == rhs.sell && lhs.buy == rhs.buy;
+        }
+
+        [[nodiscard]] friend bool operator!=(const task& lhs, const task& rhs) noexcept {
+            return !(lhs == rhs);
+        }
+
+        bench_info            buy, sell;
         std::function<void()> clear_up;
     };
 
     class workbench {
     public:
-        workbench(const point& p, int type)
-            : _pos(p), _type(type), _left_time(0), _material_state(0), _product_state() {}
+        workbench(const point& p, int type) : _info(p, type), _left_time(0), _material_state(0), _product_state() {}
 
         bool operator[](size_t idx) {
             return _material_state & (1 << idx);
         }
 
         friend std::istream& operator>>(std::istream& is, workbench& ben) {
-            return is >> ben._type >> ben._pos >> ben._left_time >> ben._material_state >> ben._product_state;
+            return is >> ben._info.type >> ben._info.pos >> ben._left_time >> ben._material_state >> ben._product_state;
         }
 
         int type() const noexcept {
-            return _type;
+            return _info.type;
         }
 
         bool produced() const noexcept {
@@ -83,32 +109,19 @@ namespace msc {
         }
 
         const point& pos() const noexcept {
-            return _pos;
+            return _info.pos;
+        }
+
+        const bench_info& info() const noexcept {
+            return _info;
         }
 
     private:
-        int _type;
-
-        point _pos;
-
-        int  _left_time;  // in unit frame
-        int  _material_state;
-        bool _product_state;
+        bench_info _info;
+        int        _left_time;  // in unit frame
+        int        _material_state;
+        bool       _product_state;
     };
-
-    // TODO: A heuristic function to calculate profit of a new task
-    // This is from a purchasable workbench.
-    inline double task_profit(const workbench& src, const workbench& dest) {
-        assert(can_product(src.type()));
-        return price_on_sell(src.type()) - price_on_buy(src.type());
-    }
-
-    // TODO: A heuristic function to calculate profit when the robot completes a task and is ready to start a new one
-    // This is from a consumable workbench.
-    // Typically, it equals TASK-PROFIT - DISTANCE-COST
-    constexpr double next_task_profit() {
-        return 0.0;
-    }
 
     class robot {
     public:
@@ -122,17 +135,17 @@ namespace msc {
             return _action_status > 0;
         }
 
-        void start_task(const task& t) {
+        void start_task(std::optional<task> t) {
             // Called by scheduler to start a task
             std::cerr << "[LOG] CALLED START_TASK" << std::endl;
-            if (fabs(t.sell.x) < 1e-6)
+            if (!t)
                 return;
-            _task = t;
+            _task = t.value();
 
-            std::cerr << "[LOG] Robot " << _id << " Buy: [" << _task.buy.x << ", " << _task.buy.y << "]\tSell: ["
-                      << _task.sell.x << ", " << _task.sell.y << "]" << std::endl;
+            std::cerr << "[LOG] Robot " << _id << " Buy: [" << _task.buy.pos.x << ", " << _task.buy.pos.y
+                      << "]\tSell: [" << _task.sell.pos.x << ", " << _task.sell.pos.y << "]" << std::endl;
             _task_status = Buying;
-            start_action<Buy>(_task.sell);
+            start_action<Buy>(_task.buy.pos);
         }
 
         void continue_task() {
@@ -142,15 +155,12 @@ namespace msc {
             else {
                 if (_task_status == Buying) {
                     _task_status = Selling;
-                    _target      = _task.sell;
-                    start_action<Sell>(_task.buy);
+                    _target      = _task.sell.pos;
+                    start_action<Sell>(_task.sell.pos);
                 }
                 else if (_task_status == Selling) {
                     _task_status = Waiting;
-                    if (_task.clear_up) {
-                        std::cerr << "[LOG] CALLED_CLEAR_UP" << std::endl;
-                        _task.clear_up();
-                    }
+                    _task.clear_up();
                 }
             }
         }

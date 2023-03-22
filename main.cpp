@@ -22,7 +22,7 @@ using namespace std;
 // }
 
 int main() {
-    // freopen("C:/Users/26354/Desktop/test.txt", "r", stdin);
+     //freopen("C:/Users/ASUS/Desktop/fake_input.txt", "r", stdin);
     msc::bench_god     benchgod;
     vector<msc::robot> robots;
 
@@ -40,8 +40,7 @@ int main() {
         for (int i = 0; i < ROBOT_N; ++i) {
             if (robots[i].is_waiting()) {
                 msc::point pos = robots[i].pos();
-                msc::task  t   = benchgod.get_task(pos);
-                robots[i].start_task(t);
+                robots[i].start_task(benchgod.get_task(pos));
             }
             else
                 robots[i].continue_task();
