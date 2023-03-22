@@ -66,9 +66,9 @@ namespace msc {
         workbench(const point& p, int type)
             : _pos(p), _type(type), _left_time(0), _material_state(0), _product_state() {}
 
-        // bool operator[](size_t idx) {
-        //     return _material_state[idx];
-        // }
+        bool operator[](size_t idx) {
+            return _material_state & (1 << idx);
+        }
 
         friend std::istream& operator>>(std::istream& is, workbench& ben) {
             return is >> ben._type >> ben._pos >> ben._left_time >> ben._material_state >> ben._product_state;

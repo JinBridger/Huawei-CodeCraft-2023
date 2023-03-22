@@ -53,7 +53,7 @@ namespace msc {
             edge*      max_task{};
             for (auto& h : _workbenches) {
                 for (auto& t : h._tasks) {
-                    if (!t._used && h._bench.produced()) {
+                    if (!t._used && h._bench.produced() && !(*t._target)[h._bench.type()]) {
                         if (double eff = task_profit(h._bench, *t._target)
                                          / (h._bench.pos().distance(t._target->pos()) + pos.distance(h._bench.pos()));
                             eff > max_eff) {
@@ -71,7 +71,7 @@ namespace msc {
             // assert(res != h._tasks.end());
             if (max_task) {
                 max_task->_used = true;
-                return { start->pos(), max_task->_target->pos(), [&] { max_task->_used = false; } };
+                return { start->pos(), max_task->_target->pos(), [=] { max_task->_used = false; } };
             }
             return { point{}, point{}, nullptr };
         }
