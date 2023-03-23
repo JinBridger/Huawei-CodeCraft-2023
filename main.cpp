@@ -39,8 +39,24 @@ int main() {
     while (1) {
         io.receive();
         // auto start = std::chrono::system_clock::now();
+        // for (int i = 0; i < ROBOT_N; ++i) {
+        //     for (int j = i + 1; j < ROBOT_N; ++j) {
+        //         if(robots[i].is_anti_collision() ||robots[j].is_anti_collision()) {
+        //             continue;
+        //         }
+        //         if (robots[i].collision_detect(robots[j])) {
+        //             cerr << "[LOG] Robot " << i << " may collision with" << j << endl;
+        //         }
+        //     }
+        // }
 
         for (int i = 0; i < ROBOT_N; ++i) {
+            // if (robots[i].is_anti_collision()) {
+            //     cerr << "[LOG] Robot " << i << " is anti collisioning" << endl;
+            //     robots[i].anti_collision();
+            // }
+            // else
+            // {
             if (robots[i].is_waiting() && io.get_frame_id() < 8500) {
                 msc::point pos = robots[i].pos();
                 robots[i].start_task(benchgod.get_task(pos));
@@ -49,6 +65,7 @@ int main() {
                 if (!robots[i].is_waiting())
                     robots[i].continue_task();
             }
+            // }
         }
         // End timer
         // auto end = std::chrono::system_clock::now();

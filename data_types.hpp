@@ -125,7 +125,7 @@ namespace msc {
 
     class robot {
     public:
-        robot(int id) : _action_status(Idle), _task_status(Waiting), _id(id), _task() {}
+        robot(int id) : _action_status(Idle), _task_status(Waiting), _id(id), _task(), _collision_cnt(0) {}
 
         bool is_waiting() const noexcept {
             return _task_status == Waiting;
@@ -163,6 +163,48 @@ namespace msc {
                     _task.clear_up();
                 }
             }
+        }
+
+        bool collision_detect(robot& r) {
+            double self_sin = sin(_direction);
+            double self_cos = cos(_direction);
+
+            double self_v_x = self_cos * _linear_v;
+            double self_v_y = self_sin * _linear_v;
+
+            double r_sin = sin(r._direction);
+            double r_cos = cos(r._direction);
+
+            double r_v_x = r_cos * r._linear_v;
+            double r_v_y = r_sin * r._linear_v;
+
+            double delta_direction = fabs(_direction - r._direction);
+
+            for (int i = 0; i < 50; ++i) {
+                point next_self(_pos.x + i * self_v_x / 50.0, _pos.y + i * self_v_y / 50.0);
+                point r_self(r._pos.x + i * r_v_x / 50.0, r._pos.y + i * r_v_y / 50.0);
+
+                double distance = next_self.distance(r_self);
+                if (distance < 2 * ROBOT_RADIUS_ON_TAKING && delta_direction > 2.518 && delta_direction < 3.666) {
+                    r._collision_cnt += 3;
+                    _collision_cnt += 3;
+                    return true;
+                }
+            }
+            _collision_cnt   = 0;
+            r._collision_cnt = 0;
+
+            return false;
+        }
+
+        void anti_collision() {
+            rotate(-PI);
+            forward(6);
+            _collision_cnt--;
+        }
+
+        bool is_anti_collision() {
+            return _collision_cnt > 0;
         }
 
         friend std::istream& operator>>(std::istream& is, robot& r) {
@@ -334,5 +376,7 @@ namespace msc {
         TaskStatus   _task_status;
 
         std::string _state;
+
+        int _collision_cnt;
     };
 }  // namespace msc

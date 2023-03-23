@@ -111,6 +111,12 @@ namespace msc {
             }
 
             std::cerr << "[LOG] Successfully input frame " << _frame_id << std::endl;
+
+            int past_sec = _frame_id / 50;
+            _sec         = 180 - past_sec;
+            int cur_min  = _sec / 60;
+            int cur_sec  = _sec % 60;
+            std::cerr << "[LOG] Current is " << cur_min << ":" << cur_sec << std::endl;
         }
 
         bool check_valid_input(std::vector<std::string> inp) {
@@ -131,6 +137,8 @@ namespace msc {
     private:
         int _frame_id = 0;
         int _coin_cnt = 0;
+
+        int _sec = 180;
 
         std::vector<robot>& _robots;
         bench_god&          _bench_god;
